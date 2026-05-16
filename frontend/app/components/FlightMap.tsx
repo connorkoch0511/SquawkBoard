@@ -35,12 +35,33 @@ function planeIcon(heading: number, status: string, selected: boolean): L.DivIco
   });
 }
 
-const TRAIL_LENGTH = 20;
+const TRAIL_LENGTH = 16;
+const TRAIL_STEP_SECS = 60; // seconds between synthetic history points
 
 interface FlightLayer {
   marker: L.Marker;
-  trails: L.Polyline[]; // one segment per gap between history points, oldest first
+  trails: L.Polyline[];
   history: L.LatLngTuple[];
+  tickCount: number;
+}
+
+// Back-extrapolate TRAIL_LENGTH positions from the current fix using dead-reckoning.
+// Each step goes back TRAIL_STEP_SECS seconds, giving ~16 min of visible trail on load.
+function syntheticHistory(flight: Flight): L.LatLngTuple[] {
+  const reverseHeadRad = ((flight.heading + 180) % 360) * (Math.PI / 180);
+  // 1 knot = 1 nm/hr = 1/60 deg-lat/hr → per second = speed / 3600 / 60
+  const degPerSec = flight.speed / 3600 / 60;
+  const cosLat = Math.cos((flight.lat * Math.PI) / 180);
+  const pts: L.LatLngTuple[] = [];
+
+  for (let i = TRAIL_LENGTH; i >= 0; i--) {
+    const secsBack = i * TRAIL_STEP_SECS;
+    pts.push([
+      flight.lat + Math.cos(reverseHeadRad) * degPerSec * secsBack,
+      flight.lng + (Math.sin(reverseHeadRad) * degPerSec * secsBack) / cosLat,
+    ]);
+  }
+  return pts;
 }
 
 export default function FlightMap({ flights, selectedId, onSelect }: Props) {
@@ -101,20 +122,21 @@ export default function FlightMap({ flights, selectedId, onSelect }: Props) {
       const existing = layersRef.current.get(flight.id);
 
       if (existing) {
-        // Append new position to history
-        existing.history.push(pos);
-        if (existing.history.length > TRAIL_LENGTH) {
-          existing.history.shift();
-        }
+        existing.tickCount++;
 
-        // Redraw trail segments with fading opacity
-        existing.trails.forEach((p) => p.remove());
-        existing.trails = buildTrail(existing.history, color, map);
+        // Advance trail once per minute so each segment is ~1 degree visible at zoom 4
+        if (existing.tickCount % TRAIL_STEP_SECS === 0) {
+          existing.history.push(pos);
+          if (existing.history.length > TRAIL_LENGTH + 1) existing.history.shift();
+          existing.trails.forEach((p) => p.remove());
+          existing.trails = buildTrail(existing.history, color, map);
+        }
 
         existing.marker.setLatLng(pos);
         existing.marker.setIcon(icon);
         existing.marker.setTooltipContent(tooltipContent(flight));
       } else {
+        const history = syntheticHistory(flight);
         const marker = L.marker(pos, { icon })
           .bindTooltip(tooltipContent(flight), {
             permanent: false,
@@ -131,8 +153,9 @@ export default function FlightMap({ flights, selectedId, onSelect }: Props) {
 
         layersRef.current.set(flight.id, {
           marker,
-          trails: [],
-          history: [pos],
+          trails: buildTrail(history, color, map),
+          history,
+          tickCount: 0,
         });
       }
     }
@@ -198,7 +221,7 @@ function buildTrail(history: L.LatLngTuple[], color: string, map: L.Map): L.Poly
     const opacity = 0.05 + (i / (history.length - 1)) * 0.5;
     const line = L.polyline([history[i - 1], history[i]], {
       color,
-      weight: 1.5,
+      weight: 2,
       opacity,
       smoothFactor: 1,
     }).addTo(map);
