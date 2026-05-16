@@ -36,8 +36,8 @@ function planeIcon(heading: number, status: string, selected: boolean): L.DivIco
 }
 
 // Trail is only drawn for the selected flight to keep the map clean.
-const TRAIL_POINTS = 14;       // number of history points to draw
-const TRAIL_STEP_SECS = 30;    // seconds between each history point
+const TRAIL_POINTS = 10;        // number of history points to draw
+const TRAIL_STEP_SECS = 300;    // 5 min per step → ~50 min total trail, ~60px at zoom 4
 
 interface FlightLayer {
   marker: L.Marker;
