@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useFlights } from "@/app/hooks/useFlights";
 import StatsBar from "@/app/components/StatsBar";
 import FlightPanel from "@/app/components/FlightPanel";
+import FlightSidebar from "@/app/components/FlightSidebar";
 
 // Leaflet requires the browser DOM — never SSR
 const FlightMap = dynamic(() => import("@/app/components/FlightMap"), {
@@ -40,6 +41,12 @@ export default function Page() {
       <FlightPanel
         flight={selectedFlight}
         onClose={() => setSelectedId(null)}
+      />
+
+      <FlightSidebar
+        flights={flights}
+        selectedId={selectedId}
+        onSelect={setSelectedId}
       />
     </div>
   );
