@@ -185,13 +185,13 @@ export default function FlightMap({ flights, selectedId, onSelect }: Props) {
       layer.marker.setIcon(planeIcon(flight.heading, flight.status, id === selectedId));
 
       if (id === selectedId) {
-        // Use accumulated history, filled out with synthetic points if short
-        const history =
-          layer.history.length > 2
-            ? layer.history
-            : syntheticHistory(flight);
+        // Backfill history with synthetic points so the trail stays full
+        // even after the 30-second tick rebuilds it from layer.history.
+        if (layer.history.length < TRAIL_POINTS) {
+          layer.history = syntheticHistory(flight);
+        }
         layer.trail?.remove();
-        layer.trail = buildTrail(history, STATUS_COLOR[flight.status] ?? "#22d3ee", map);
+        layer.trail = buildTrail(layer.history, STATUS_COLOR[flight.status] ?? "#22d3ee", map);
       } else {
         layer.trail?.remove();
         layer.trail = null;
