@@ -122,17 +122,27 @@ export default function FlightMap({ flights, selectedId, onSelect }: Props) {
       const existing = layersRef.current.get(flight.id);
 
       if (existing) {
-        existing.tickCount++;
+        // Detect respawn: flight teleported to a new route
+        const last = existing.history[existing.history.length - 1];
+        const jumped =
+          Math.abs(pos[0] - last[0]) > 2 || Math.abs(pos[1] - last[1]) > 2;
 
-        // Keep history growing for all flights so it's ready when selected
-        if (existing.tickCount % TRAIL_STEP_SECS === 0) {
-          existing.history.push(pos);
-          if (existing.history.length > TRAIL_POINTS + 1) existing.history.shift();
+        if (jumped) {
+          existing.trail?.remove();
+          existing.trail = null;
+          existing.history = [pos];
+          existing.tickCount = 0;
+        } else {
+          existing.tickCount++;
 
-          // Redraw trail only if this is the selected flight
-          if (isSelected) {
-            existing.trail?.remove();
-            existing.trail = buildTrail(existing.history, color, map);
+          if (existing.tickCount % TRAIL_STEP_SECS === 0) {
+            existing.history.push(pos);
+            if (existing.history.length > TRAIL_POINTS + 1) existing.history.shift();
+
+            if (isSelected) {
+              existing.trail?.remove();
+              existing.trail = buildTrail(existing.history, color, map);
+            }
           }
         }
 
