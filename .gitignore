@@ -1,0 +1,10 @@
+# Go
+backend/bin/
+
+# Node
+frontend/node_modules/
+frontend/.next/
+frontend/.env.local
+
+# macOS
+.DS_Store
