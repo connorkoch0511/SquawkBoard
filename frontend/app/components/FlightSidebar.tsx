@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import type { Flight, FlightStatus } from "@/app/types/flight";
 
 interface Props {
@@ -29,6 +29,18 @@ export default function FlightSidebar({ flights, selectedId, onSelect }: Props) 
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [activeStatus, setActiveStatus] = useState<FlightStatus | null>(null);
+  const selectedRowRef = useRef<HTMLButtonElement | null>(null);
+  const listRef = useRef<HTMLDivElement | null>(null);
+
+  // Auto-open and scroll to selected flight when selection comes from the map
+  useEffect(() => {
+    if (!selectedId) return;
+    setOpen(true);
+    // Let the DOM update before scrolling
+    requestAnimationFrame(() => {
+      selectedRowRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    });
+  }, [selectedId]);
 
   const filtered = useMemo(() => {
     const q = query.toLowerCase();
@@ -96,13 +108,14 @@ export default function FlightSidebar({ flights, selectedId, onSelect }: Props) 
         </div>
 
         {/* Flight list */}
-        <div className="flex-1 overflow-y-auto">
+        <div ref={listRef} className="flex-1 overflow-y-auto">
           {filtered.length === 0 ? (
             <div className="p-4 text-slate-600 text-center">No flights match</div>
           ) : (
             filtered.map((f) => (
               <button
                 key={f.id}
+                ref={f.id === selectedId ? selectedRowRef : null}
                 onClick={() => onSelect(f.id === selectedId ? null : f.id)}
                 className={`w-full text-left px-3 py-2.5 border-b border-slate-800/60 hover:bg-slate-800/60 transition-colors ${
                   f.id === selectedId ? "bg-cyan-900/30 border-l-2 border-l-cyan-500" : ""
