@@ -11,6 +11,14 @@ async function waitForLiveData(page: Page) {
   });
   // At least one flight marker on the map
   await page.waitForSelector(".leaflet-marker-icon", { timeout: 10_000 });
+  // Wait for all map tiles to finish painting so screenshots show the dark basemap
+  await page.waitForFunction(
+    () => {
+      const all = document.querySelectorAll(".leaflet-tile");
+      return all.length > 0 && document.querySelectorAll(".leaflet-tile:not(.leaflet-tile-loaded)").length === 0;
+    },
+    { timeout: 15_000 }
+  );
 }
 
 test("stats bar shows live connection and flight counts", async ({ page }) => {
