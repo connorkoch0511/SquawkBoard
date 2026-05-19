@@ -1,8 +1,23 @@
 # SquawkBoard
 
+[![E2E Tests](https://github.com/connorkoch0511/SquawkBoard/actions/workflows/e2e.yml/badge.svg)](https://github.com/connorkoch0511/SquawkBoard/actions/workflows/e2e.yml)
+
 Real-time flight tracking dashboard — 40 simulated flights broadcasting live position data over WebSocket. Built as a portfolio piece to demonstrate event-driven architecture and WebSocket-based UIs.
 
 **Live demo:** https://squawk-board.vercel.app
+
+---
+
+## Screenshots
+
+![Map with 40 live flight markers](frontend/tests/screenshots/02-map-markers.png)
+
+<table>
+  <tr>
+    <td><img src="frontend/tests/screenshots/05-sidebar-open.png" alt="Flight list sidebar"></td>
+    <td><img src="frontend/tests/screenshots/03-detail-panel.png" alt="Flight detail panel"></td>
+  </tr>
+</table>
 
 ---
 
